@@ -116,8 +116,11 @@ userEmitter.on('session', function (session, userId) {
 
 /* SOCIAL */
 
-function gameLog(user, msg, cb) {
-    msg = {msg: msg, who: user, when: new Date().getTime()};
+function gameLog(msg, extra, cb) {
+    msg = {msg: msg, when: new Date().getTime()};
+    if (extra)
+        for (var k in extra)
+            msg[k] = extra[k];
     r.rpush('rpg:chat', JSON.stringify(msg), function (err, len) {
         if (err)
             return cb ? cb(err) : console.error(err);
@@ -154,7 +157,7 @@ DISPATCH.chat = function (userId, msg, cb) {
     r.hget('rpg:user:' + userId, 'name', function (err, name) {
         if (err)
             return cb(err);
-        gameLog(name, text, cb);
+        gameLog(text, {who: name}, cb);
     });
 };
 
@@ -174,6 +177,19 @@ COMMANDS.title = function (userId, title, cb) {
     m.hset('rpg:game', 'title', title);
     emit('set', 'game', {title: title}, m);
     m.exec(cb);
+};
+
+COMMANDS.nick = function (userId, name, cb) {
+    name = name.replace(/[^\w .?\/'\-+!#&`~]+/g, '').trim().slice(0, 20);
+    if (!name)
+        return;
+    var key = 'rpg:user:' + userId;
+    r.hget(key, 'name', function (err, old) {
+        if (err)
+            throw err;
+        r.hset('rpg:user:'+userId, 'name', name, cb);
+        gameLog([{name: old}, ' changed their name to ', {name:name}, '.']);
+    });
 };
 
 /* STUPID WASTE OF TIME */

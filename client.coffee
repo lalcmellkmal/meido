@@ -15,6 +15,8 @@ class LogEntryView extends AutoView
         @$el.append $date, '&nbsp;'
         if attrs.who
             @$el.append $('<em/>', text: "<#{attrs.who}>"), '&nbsp;'
+        else
+            @$el.addClass 'meta'
         @$el.append formatMessage attrs.msg
         this
 
@@ -22,7 +24,13 @@ pad2 = (n) ->
     (if n > 9 then '' else '0') + n
 
 formatMessage = (msg) ->
-    return document.createTextNode msg
+    if typeof msg == 'string'
+        return document.createTextNode msg
+    for bit in msg
+        if bit.name
+            $ '<em/>', text: bit.name
+        else
+            formatMessage bit
 
 class Log extends Backbone.Collection
     model: LogEntry
