@@ -1,4 +1,5 @@
-var common = require('./common'),
+var _ = require('underscore'),
+    common = require('./common'),
     config = require('./plumbing/config'),
     events = require('events');
 
@@ -36,14 +37,6 @@ function emitToSession(sessionId, type, target, msg, m) {
     (m || r).publish(config.REDIS_CHANNEL, msg);
 }
 
-function emitStatus(user, msg) {
-    emitTo(user, 'set', 'system', {status: msg});
-}
-
-function emitError(user, error) {
-    emitTo(user, 'set', 'system', {status: {error: error}});
-}
-
 function subscribeToBroker() {
     var sub = redisClient();
     sub.subscribe(config.REDIS_CHANNEL + ':broker');
@@ -67,7 +60,7 @@ function onBrokerMessage(channel, msg) {
         var func = DISPATCH[action];
         if (!func)
             return console.warn("Unknown message type", action, "from", user);
-        var timeout = setTimeout(brokerTimeout.bind(null, action), 3000);
+        var timeout = setTimeout(brokerTimeout.bind(null,user,action), 3000);
         func(user, obj, brokerReturn.bind(null, user, timeout));
     }
     else if (msg.a == 'new') {
@@ -94,12 +87,20 @@ function onBrokerMessage(channel, msg) {
 
 function brokerReturn(user, timeout, err) {
     clearTimeout(timeout);
-    if (err)
-        console.error('Error', err, 'due to message by', user);
+    if (err) {
+        if (typeof err == 'string')
+            logTo(user, err);
+        else {
+            console.error('Error', err, 'due to message by', user);
+            logTo(user, "Something's gone wrong.");
+        }
+    }
 }
 
-function brokerTimeout(a) {
+function brokerTimeout(user, a) {
     console.error("Handler for " + a + " timed out.");
+    if (config.DEBUG)
+        logTo(user, "Command timed out.");
 }
 
 userEmitter.on('session', function (session, userId) {
@@ -117,8 +118,7 @@ userEmitter.on('session', function (session, userId) {
 function gameLog(msg, extra, cb) {
     msg = {msg: msg, when: new Date().getTime()};
     if (extra)
-        for (var k in extra)
-            msg[k] = extra[k];
+        _.extend(msg, extra);
     r.rpush('rpg:chat', JSON.stringify(msg), function (err, len) {
         if (err)
             return cb ? cb(err) : console.error(err);
@@ -126,6 +126,14 @@ function gameLog(msg, extra, cb) {
         emit('add', 'log', {obj: msg});
         cb && cb(null);
     });
+}
+
+function logTo(user, msg, extra) {
+    var now = new Date().getTime();
+    msg = {msg: msg, when: now, id: 'U'+now};
+    if (extra)
+        _.extend(msg, extra);
+    emitTo(user, 'add', 'log', {obj: msg});
 }
 
 function sendChatHistory(session) {
@@ -155,17 +163,19 @@ userEmitter.on('gone', function (user) {
 var chatId = 0;
 DISPATCH.chat = function (userId, msg, cb) {
     if (typeof msg.text != 'string')
-        return cb("Bad chat message");
+        return cb("Bad chat message.");
     if (msg.text[0] == '/') {
-        var m = msg.text.match(/^\/(\w+)\s+(.*)$/);
-        var cmd = m[1] && COMMANDS[m[1].toLowerCase()];
+        var m = msg.text.match(/^\/(\w+)(?:|\s+(.*))$/);
+        var cmd = m && COMMANDS[m[1].toLowerCase()];
         if (cmd)
-            cmd(userId, m[2], cb);
+            cmd(userId, m[2] || '', cb);
+        else
+            logTo(userId, "Invalid command.");
         return;
     }
     var text = msg.text.trim();
     if (!text)
-        return cb("Empty chat message");
+        return cb("Empty chat message.");
     r.hget('rpg:user:' + userId, 'name', function (err, name) {
         if (err)
             return cb(err);
@@ -194,13 +204,14 @@ COMMANDS.title = function (userId, title, cb) {
 COMMANDS.nick = function (userId, name, cb) {
     name = name.replace(/[^\w .?\/'\-+!#&`~]+/g, '').trim().slice(0, 20);
     if (!name)
-        return;
+        return cb('Bad name.');
     var key = 'rpg:user:' + userId;
     r.hget(key, 'name', function (err, old) {
         if (err)
             throw err;
         r.hset('rpg:user:'+userId, 'name', name, cb);
         gameLog([{name: old}, ' changed their name to ', {name:name}, '.']);
+        cb(null);
     });
 };
 
