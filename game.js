@@ -209,9 +209,10 @@ COMMANDS.nick = function (userId, name, cb) {
     r.hget(key, 'name', function (err, old) {
         if (err)
             throw err;
-        r.hset('rpg:user:'+userId, 'name', name, cb);
+        if (old == name)
+            return gameLog("That's already your name.", {}, cb);
         gameLog([{name: old}, ' changed their name to ', {name:name}, '.']);
-        cb(null);
+        r.hset('rpg:user:'+userId, 'name', name, cb);
     });
 };
 
