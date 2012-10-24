@@ -25,12 +25,14 @@ pad2 = (n) ->
 
 formatMessage = (msg) ->
     if typeof msg == 'string'
-        return document.createTextNode msg
+        return textNode msg
     for bit in msg
         if bit.name
             $ '<em/>', text: bit.name
         else
             formatMessage bit
+
+textNode = (t) -> document.createTextNode t
 
 class Log extends Backbone.Collection
     model: LogEntry
@@ -108,6 +110,36 @@ class SocialView extends AutoView
         @model.set unseenMessage: false
         false
 
+maidAttrs = ['Athletics', 'Affection', 'Skill', 'Cunning', 'Luck', 'Will']
+
+class PlayerCard extends Backbone.Model
+
+class PlayerCardView extends AutoView
+    tagName: 'li'
+    links: change: 'render'
+    render: ->
+        @$el.empty()
+        attrs = @model.attributes
+        @$el.append $('<b/>', text: attrs.name), '<br>'
+        for attr in maidAttrs
+            @$el.append textNode("#{attr}: #{attrs[attr] || 0}"), '<br>'
+        this
+
+class PlayerCards extends Backbone.Collection
+    model: PlayerCard
+
+class PlayerCardsView extends AutoView
+    id: 'idCards'
+    links:
+        reset: 'render'
+
+    render: ->
+        $dest = @$el
+        $dest.empty()
+        @model.forEach (card) =>
+            $dest.append new PlayerCardView(model: card).render().el
+        this
+
 class Game extends Backbone.Model
     defaults:
         title: 'Maid RPG'
@@ -151,12 +183,14 @@ initialDomSetup = ->
     $('<a/>', {href: '', id: 'unseenMessageHint', text: 'New message ↓'}).appendTo($social).hide()
 
     $game = $('<div/>', id: 'game').appendTo 'body'
-    $game.append $('<h1></h1>')
+    $game.append $ '<h1/>'
+    $game.append $ '<ul/>', id: 'idCards'
 
     return
 
 initialDomSetup()
 setupModel 'game', Game
+setupModel 'idCards', PlayerCards
 setupModel 'social', Social
 setupModel 'log', Log
-setupViews [SystemView, GameView, SocialView, LogView]
+setupViews [SystemView, GameView, PlayerCardsView, SocialView, LogView]

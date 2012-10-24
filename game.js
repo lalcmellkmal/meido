@@ -192,6 +192,8 @@ userEmitter.on('session', function (session, user) {
         if (game)
             emitToSession(session, 'set', 'game', game);
     });
+    var players = [{name: 'maid'}, {name: 'second maid'}];
+    emitToSession(session, 'reset', 'idCards', {objs: players});
 });
 
 COMMANDS.title = function (userId, title, cb) {
