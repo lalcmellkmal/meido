@@ -8,7 +8,8 @@ function redisClient() {
 
 var r = redisClient();
 
-var DISPATCH = {}, USERS = {};
+var USERS = {};
+var DISPATCH = {}, COMMANDS = {};
 
 var userEmitter = new events.EventEmitter;
 
@@ -138,6 +139,13 @@ var chatId = 0;
 DISPATCH.chat = function (userId, msg, cb) {
     if (typeof msg.text != 'string')
         return cb("Bad chat message");
+    if (msg.text[0] == '/') {
+        var m = msg.text.match(/^\/(\w+)\s+(.*)$/);
+        var cmd = m[1] && COMMANDS[m[1].toLowerCase()];
+        if (cmd)
+            cmd(userId, m[2], cb);
+        return;
+    }
     var text = msg.text.trim();
     if (!text)
         return cb("Empty chat message");
@@ -148,6 +156,24 @@ DISPATCH.chat = function (userId, msg, cb) {
             return cb(err);
         gameLog(name, text, cb);
     });
+};
+
+/* GAME STATE */
+
+userEmitter.on('session', function (session, user) {
+    r.hgetall('rpg:game', function (err, game) {
+        if (err)
+            throw err;
+        if (game)
+            emitToSession(session, 'set', 'game', game);
+    });
+});
+
+COMMANDS.title = function (userId, title, cb) {
+    var m = r.multi();
+    m.hset('rpg:game', 'title', title);
+    emit('set', 'game', {title: title}, m);
+    m.exec(cb);
 };
 
 /* STUPID WASTE OF TIME */
