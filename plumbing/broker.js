@@ -41,8 +41,16 @@ function onSubMessage(channel, msg) {
 
     if (msg.c) {
         var client = CLIENTS[msg.c];
-        if (client)
-            client.send(payload);
+        if (client) {
+            var flat = JSON.stringify(payload);
+            if (config.DEBUG) {
+                if (payload.a == 'reset' && payload.t == 'log')
+                    console.log('> [chat log]');
+                else
+                    console.log('> ' + flat);
+            }
+            client.sendRaw(flat);
+        }
     }
     else if (msg.u) {
         var clients = USERS[msg.u];
