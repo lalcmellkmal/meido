@@ -9,11 +9,17 @@ class LogEntryView extends AutoView
     render: ->
         attrs = @model.attributes
         @$el.empty()
+        date = new Date attrs.when
+        $date = $ '<time/>',
+            text: "#{(date.getHours()+11) % 12 + 1}:#{pad2 date.getMinutes()}"
+        @$el.append $date, '&nbsp;'
         if attrs.who
-            @$el.append $('<em/>', text: "<#{attrs.who}> ")
+            @$el.append $('<em/>', text: "<#{attrs.who}>"), '&nbsp;'
         @$el.append formatMessage attrs.msg
-        who = attrs.who
         this
+
+pad2 = (n) ->
+    (if n > 9 then '' else '0') + n
 
 formatMessage = (msg) ->
     return document.createTextNode msg
@@ -94,6 +100,8 @@ class SocialView extends AutoView
         false
 
 class Game extends Backbone.Model
+    defaults:
+        title: 'Maid RPG'
 
 class GameView extends AutoView
     id: 'game'
@@ -102,7 +110,8 @@ class GameView extends AutoView
         change: 'render'
 
     render: ->
-        $('<b>Game goes here.</b> ').appendTo @$el
+        attrs = @model.attributes
+        @$('h1').text attrs.title
         this
 
 class SystemView extends AutoView
@@ -127,11 +136,14 @@ initialDomSetup = ->
     if window.domIsSetup
         return
     window.domIsSetup = true
-    $game = $('<div/>', id: 'game').appendTo 'body'
-    $social = $('<form/>', id: 'social').appendTo $game
+    $social = $('<form/>', id: 'social').appendTo 'body'
     $log = $('<ul/>', id: 'log').appendTo $social
     $('<input>', id: 'chatInput').appendTo $social
     $('<a/>', {href: '', id: 'unseenMessageHint', text: 'New message ↓'}).appendTo($social).hide()
+
+    $game = $('<div/>', id: 'game').appendTo 'body'
+    $game.append $('<h1></h1>')
+
     return
 
 initialDomSetup()
