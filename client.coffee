@@ -53,8 +53,9 @@ class LogView extends AutoView
         alreadyAtBottom = e.scrollTop + 20 >= e.scrollHeight - e.clientHeight
         @add entry
         overflow = @model.length - common.CLIENT_CHAT_LENGTH
-        for i in [1..overflow]
-            @model.shift()
+        if overflow > 0
+            for i in [1..overflow]
+                @model.shift()
         if alreadyAtBottom
             @$el.scrollTop e.scrollHeight
         else
