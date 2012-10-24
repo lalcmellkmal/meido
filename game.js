@@ -166,8 +166,6 @@ DISPATCH.chat = function (userId, msg, cb) {
     var text = msg.text.trim();
     if (!text)
         return cb("Empty chat message");
-    if (text == 'die')
-        throw new Error("AAAAAAH");
     r.hget('rpg:user:' + userId, 'name', function (err, name) {
         if (err)
             return cb(err);
