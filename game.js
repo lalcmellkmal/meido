@@ -108,9 +108,7 @@ userEmitter.on('session', function (session, userId) {
             throw err;
         else if (!user)
             return console.error("No user info?!");
-        emitToSession(session, 'set', 'system', {
-            status: 'Logged in as ' + user.name + '.',
-        });
+        emitToSession(session, 'set', 'system', {status: ''});
     });
 });
 
@@ -137,6 +135,22 @@ function sendChatHistory(session) {
     });
 }
 userEmitter.on('session', sendChatHistory);
+
+userEmitter.on('new', function (user) {
+    r.hget('rpg:user:'+user, 'name', function (err, name) {
+        if (err) throw err;
+        if (name)
+            gameLog([{name: name}, " joined."]);
+    });
+});
+
+userEmitter.on('gone', function (user) {
+    r.hget('rpg:user:'+user, 'name', function (err, name) {
+        if (err) throw err;
+        if (name)
+            gameLog([{name: name}, " left."]);
+    });
+});
 
 var chatId = 0;
 DISPATCH.chat = function (userId, msg, cb) {
