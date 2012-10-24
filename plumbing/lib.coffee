@@ -48,7 +48,7 @@ requestLogin = ->
                 loggedInUser: null
                 onlogin: onLogin
                 onlogout: onLogout
-            $button.appendTo '#system'
+            $('#system').append '<br>', $button
     $button.click ->
         navigator.id.request()
         false
