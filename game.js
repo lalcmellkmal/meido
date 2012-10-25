@@ -268,7 +268,7 @@ function parseRolls(user, text) {
     return text.split(/([\/#][a-zA-Z0-9]+)/g).map(function (bit, i) {
         if (i % 2 == 0)
             return bit;
-        var d = bit.match(/^d(\d+)$/);
+        var d = bit.match(/^.d(\d+)$/i);
         if (d) {
             d = parseInt(d[1], 10);
             if (d > 1 && d < 101)
