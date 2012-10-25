@@ -29,6 +29,8 @@ formatMessage = (msg) ->
     for bit in msg
         if bit.name
             $ '<em/>', text: bit.name
+        else if bit.roll
+            $ '<b/>', text: bit.roll
         else
             formatMessage bit
 

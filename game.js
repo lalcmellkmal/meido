@@ -258,8 +258,33 @@ DISPATCH.chat = function (user, msg, cb) {
     var text = msg.text.trim();
     if (!text)
         return cb("Empty chat message.");
-    gameLog(text, {who: user.name}, cb);
+    gameLog(parseRolls(user, text), {who: user.name}, cb);
 };
+
+function parseRolls(user, text) {
+    return text.split(/#([a-zA-Z0-9]+)/g).map(function (bit, i) {
+        if (i % 2 == 0)
+            return bit;
+        bit = bit.toLowerCase();
+        var d = bit.match(/^d(\d+)$/);
+        if (d) {
+            d = parseInt(d[1], 10);
+            if (d > 1 && d < 101)
+                return {roll: '#d' + d + ' (' + rollDie(d) + ')'};
+        }
+        var attr = parseInt(user[bit], 10);
+        if (!attr && attr !== 0)
+            return '#' + bit;
+        var roll = rollDie(6);
+        console.log(attr, roll, attr*roll);
+        var desc = '*' + roll + '=(' + (attr*roll) + ')';
+        return {roll: '#' + bit + desc};
+    });
+}
+
+function rollDie(n) {
+    return Math.floor(Math.random() * n) + 1;
+}
 
 /* GAME STATE */
 
