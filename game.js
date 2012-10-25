@@ -258,7 +258,10 @@ DISPATCH.chat = function (user, msg, cb) {
     var text = msg.text.trim();
     if (!text)
         return cb("Empty chat message.");
-    gameLog(parseRolls(user, text), {who: user.name}, cb);
+    var extra = {who: user.name};
+    if (user.nameColor)
+        extra.color = user.nameColor;
+    gameLog(parseRolls(user, text), extra, cb);
 };
 
 function parseRolls(user, text) {

@@ -14,7 +14,9 @@ class LogEntryView extends AutoView
             text: "#{(date.getHours()+11) % 12 + 1}:#{pad2 date.getMinutes()}"
         @$el.append $date, '&nbsp;'
         if attrs.who
-            @$el.append $('<em/>', text: "<#{attrs.who}>"), '&nbsp;'
+            $who = $ '<em/>', text: "#{attrs.who}:"
+            if attrs.color then $who.css color: attrs.color
+            @$el.append $who, '&nbsp;'
         else
             @$el.addClass 'meta'
         @$el.append formatMessage attrs.msg
