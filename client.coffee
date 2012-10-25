@@ -32,7 +32,7 @@ formatMessage = (msg) ->
         if bit.name
             $ '<em/>', text: bit.name
         else if bit.roll
-            $ '<b/>', text: bit.roll
+            $ '<b/>', text: bit.roll, title: (bit.alt || '')
         else
             formatMessage bit
 

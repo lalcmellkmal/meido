@@ -268,20 +268,23 @@ function parseRolls(user, text) {
     return text.split(/([\/#][a-zA-Z0-9]+)/g).map(function (bit, i) {
         if (i % 2 == 0)
             return bit;
-        var d = bit.match(/^.d(\d+)$/i);
+        var key = bit.slice(1).toLowerCase();
+        var d = key.match(/^d(\d+)$/);
         if (d) {
             d = parseInt(d[1], 10);
             if (d > 1 && d < 101)
                 return {roll: '#d' + d + ' (' + rollDie(d) + ')'};
         }
-        var attr = parseInt(user[bit.slice(1).toLowerCase()], 10);
+        var attr = parseInt(user[key], 10);
         if (attr === 0)
-            return {roll: bit + '=(0)'};
+            return {roll: key + ' = 0'};
         if (!attr)
             return bit;
         var roll = rollDie(6);
-        var desc = '*' + roll + '=(' + (attr*roll) + ')';
-        return {roll: bit + desc};
+        return {
+            roll: key + ' check ' + attr*roll,
+            alt: 'rolled ' + roll + ', times ' + user[key],
+        };
     });
 }
 
