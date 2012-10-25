@@ -10,7 +10,7 @@ function redisClient() {
 
 var r = redisClient();
 
-var USERS = {};
+var USERS = {}, TIMEOUTS = {};
 var DISPATCH = {}, COMMANDS = {};
 
 var userEmitter = new events.EventEmitter;
@@ -68,13 +68,8 @@ function onBrokerMessage(channel, msg) {
         onNewUser(user);
     else if (msg.a == 'session')
         userEmitter.emit('session', msg.c, user);
-    else if (msg.a == 'gone') {
-        console.log('Dropped #' + user);
-        if (USERS[user]) {
-            userEmitter.emit('gone', USERS[user]);
-            delete USERS[user];
-        }
-    }
+    else if (msg.a == 'gone')
+        onUserGone(user);
     else if (msg.a == 'userList')
         refreshUserList(msg.users);
     else
@@ -105,12 +100,48 @@ userEmitter.on('session', function (session, userId) {
 
 function onNewUser(userId) {
     USERS[userId] = {id: userId};
+
+    /* clear pending timeout if any */
+    var timeout = TIMEOUTS[userId];
+    if (timeout) {
+        clearTimeout(timeout.handle);
+        delete TIMEOUTS[userId];
+        console.log('#' + userId + ' found again');
+    }
     refreshUser(userId, function (err, user) {
         if (err)
             throw err;
         if (user)
             userEmitter.emit('new', user);
     });
+}
+
+var TIMEOUT_CTR = 0;
+var TIMEOUT_TIME = 5000;
+
+function onUserGone(userId) {
+    console.log('#' + userId + ' lost');
+    if (!USERS[userId])
+        return;
+    /* ctr is to disambiguate overlapping timeouts */
+    var timeout = {ctr: ++TIMEOUT_CTR};
+    timeout.handle = setTimeout(timeoutUser.bind(null, userId, timeout.ctr),
+            TIMEOUT_TIME);
+    TIMEOUTS[userId] = timeout;
+}
+
+function timeoutUser(userId, timeoutCtr) {
+    var timeout = TIMEOUTS[userId];
+    if (!timeout || timeout.ctr !== timeoutCtr)
+        return;
+    delete TIMEOUTS[userId];
+
+    var user = USERS[userId];
+    if (!user)
+        return;
+    console.log('#' + userId + ' gone');
+    userEmitter.emit('gone', user);
+    delete USERS[userId];
 }
 
 function refreshUser(userId, cb) {
