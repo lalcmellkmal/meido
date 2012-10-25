@@ -79,7 +79,7 @@ function loadAccount(packet, cb) {
 				return cb(err);
 			var info = {
 				email: packet.email,
-				name: packet.email.match(/^(.*)@/)[1],
+				name: 'Anon',
 			};
 			var m = r.multi();
 			m.hset('rpg:userPersonas', packet.email, userId);
