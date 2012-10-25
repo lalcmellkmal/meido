@@ -37,6 +37,23 @@ class AutoView extends Backbone.View
                 @model.off event, this[method], this
         null
 
+    writeTarget: (event) ->
+        event.preventDefault()
+        $t = $ event.target
+        path = $t.data 'path'
+        if path
+            $t.css color: 'gray'
+            newVal = prompt "Enter new #{path}."
+            $t.css color: 'inherit'
+            if newVal
+                setter = {t: @id}
+                setter[path] = newVal
+                send 'set', setter
+        return
+
+asTarget = (path, el) ->
+    $(el).addClass('target').data path: path
+
 requestLogin = ->
     requestLogin = -> null
     $button = $ '<a/>', href: '#', 'class': 'persona-button orange'

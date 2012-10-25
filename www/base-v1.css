@@ -52,6 +52,9 @@ h1 {
 	padding: 0.5em 1em;
 	margin: 0.5em;
 }
+.mutable .target {
+	cursor: pointer;
+}
 
 /* LOG SIDE */
 time {

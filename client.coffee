@@ -153,12 +153,15 @@ class Game extends Backbone.Model
 class GameView extends AutoView
     id: 'game'
 
+    events:
+        'click .target': 'writeTarget'
+
     links:
         change: 'render'
 
     render: ->
         attrs = @model.attributes
-        @$('h1').text attrs.title
+        @$('h1').text(attrs.title).data(path: 'title')
         this
 
 class SystemView extends AutoView
@@ -189,9 +192,10 @@ initialDomSetup = ->
     $('<a/>', {href: '', id: 'unseenMessageHint', text: 'New message ↓'}).appendTo($social).hide()
 
     $game = $('<div/>', id: 'game').appendTo 'body'
-    $game.append $ '<h1/>'
+    $game.append asTarget 'title', '<h1/>'
     $game.append $ '<ul/>', id: 'idCards'
 
+    $game.addClass 'mutable'
     return
 
 initialDomSetup()

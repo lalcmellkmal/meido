@@ -281,13 +281,6 @@ userEmitter.on('session', function (session, user) {
     emitToSession(session, 'reset', 'idCards', {objs: users});
 });
 
-COMMANDS.title = function (userId, title, cb) {
-    var m = r.multi();
-    m.hset('rpg:game', 'title', title);
-    emit('set', 'game', {title: title}, m);
-    m.exec(cb);
-};
-
 COMMANDS.nick = function (userId, name, cb) {
     name = name.replace(/[^\w .?\/'\-+!#&`~]+/g, '').trim().slice(0, 20);
     if (!name)
@@ -304,6 +297,27 @@ COMMANDS.nick = function (userId, name, cb) {
         if (userId in USERS)
             USERS[userId].name = name;
         r.hset('rpg:user:'+userId, 'name', name, cb);
+    });
+};
+
+DISPATCH.set = function (userId, msg, cb) {
+    if (msg.t != 'game')
+        return cb("Bad target.");
+    delete msg.t;
+    if (msg.id) {
+        delete msg.id;
+        return cb("TODO");
+    }
+    for (var k in msg)
+        if (typeof msg[k] != 'string')
+            return cb("Bad non-string value.");
+    if (_.isEmpty(msg))
+        return cb("Nothing to set.");
+    r.hmset('rpg:game', msg, function (err) {
+        if (err)
+            return cb(err);
+        emit('set', 'game', msg);
+        cb(null);
     });
 };
 
