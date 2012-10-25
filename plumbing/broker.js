@@ -41,35 +41,23 @@ function onSubMessage(channel, msg) {
 
     if (msg.c) {
         var client = CLIENTS[msg.c];
-        if (client) {
-            var flat = JSON.stringify(payload);
-            if (config.DEBUG) {
-                if (payload.a == 'reset' && payload.t == 'log')
-                    console.log('> [chat log]');
-                else
-                    console.log('> ' + flat);
-            }
-            client.sendRaw(flat);
-        }
+        if (client)
+            client.send(payload);
     }
     else if (msg.u) {
         var clients = USERS[msg.u];
         if (clients) {
             var flat = JSON.stringify(payload);
             if (config.DEBUG)
-                console.log('> ' + flat);
+                logOutgoing(payload);
             for (var i = 0; i < clients.length; i++)
                 clients[i].sendRaw(flat);
         }
     }
     else if (msg.a == 'broadcast') {
         var flat = JSON.stringify(payload);
-        if (config.DEBUG) {
-            if (payload.a == 'upgrade')
-                console.log('> Broadcast upgrade.');
-            else
-                console.log('> ' + flat);
-        }
+        if (config.DEBUG)
+            logOutgoing(payload);
         for (var id in CLIENTS) {
             var client = CLIENTS[id];
             if (client.state == 'loggedIn')
@@ -82,6 +70,30 @@ function onSubMessage(channel, msg) {
     }
     else
         console.warn("Ignoring sub message", msg);
+}
+
+function logOutgoing(payload) {
+    var flat;
+    if (payload.a == 'reset' && payload.t == 'log')
+        flat = 'reset log [...]';
+    else if (payload.a == 'upgrade')
+        flat = 'upgrade [...]';
+    else {
+        var copy = {}, n = 0;
+        for (var k in payload) {
+            if (['a', 't'].indexOf(k) < 0) {
+                copy[k] = payload[k];
+                n++;
+            }
+        }
+        if (n == 1 && copy.obj)
+            copy = copy.obj;
+        else if (n == 1 && copy.objs)
+            copy = copy.objs;
+        delete copy.when;
+        flat = payload.a + ' ' + payload.t + ' ' + JSON.stringify(copy);
+    }
+    console.log('> ' + flat);
 }
 
 /* WEBSERVER */
@@ -188,7 +200,7 @@ C.sendStatus = function (msg) {
 C.send = function (msg) {
     var flat = JSON.stringify(msg);
     if (config.DEBUG)
-        console.log('> ' + flat);
+        logOutgoing(msg);
     this.sendRaw(flat);
 };
 
