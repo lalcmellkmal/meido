@@ -102,8 +102,6 @@ userEmitter.on('session', function (session, userId) {
 });
 
 function onNewUser(userId) {
-    USERS[userId] = {id: userId};
-
     /* clear pending timeout if any */
     var timeout = TIMEOUTS[userId];
     if (timeout) {
@@ -111,6 +109,11 @@ function onNewUser(userId) {
         delete TIMEOUTS[userId];
         console.log('#' + userId + ' found again');
     }
+
+    if (userId in USERS)
+        return;
+
+    USERS[userId] = {id: userId};
     refreshUser(userId, function (err, user) {
         if (err)
             throw err;
