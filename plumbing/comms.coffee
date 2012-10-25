@@ -1,7 +1,7 @@
 system = new Backbone.Model
 window.models = system: system
 
-window.dispatch =
+dispatch =
     set: ->
         target = models[@t]
         delete @t
@@ -13,12 +13,16 @@ window.dispatch =
         return
 
     add: ->
-        models[@t].add(@objs or @obj)
+        models[@t].add @objs or @obj
+
+    remove: ->
+        t = models[@t]
+        o = t.get @id
+        if o then t.remove o
         return
 
     reset: ->
-        models[@t].reset(@objs)
-        return
+        models[@t].reset @objs
 
     upgrade: ->
         src = @src
@@ -46,7 +50,7 @@ _.extend sock,
         for data in JSON.parse msg.data
             a = data.a
             delete data.a
-            window.dispatch[a]?.call data
+            dispatch[a]?.call data
         return
 
     onclose: ->
