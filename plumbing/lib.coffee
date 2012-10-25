@@ -50,6 +50,9 @@ class AutoView extends Backbone.View
                 if setter
                     setter[path] = newVal
                     send 'set', setter
+
+            # TEMP
+            $('#chatInput').focus()
         return
 
     findPath: ($child) ->
