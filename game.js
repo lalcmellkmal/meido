@@ -259,22 +259,23 @@ DISPATCH.chat = function (user, msg, cb) {
 };
 
 function parseRolls(user, text) {
-    return text.split(/\/([a-zA-Z0-9]+)/g).map(function (bit, i) {
+    return text.split(/([\/#][a-zA-Z0-9]+)/g).map(function (bit, i) {
         if (i % 2 == 0)
             return bit;
-        bit = bit.toLowerCase();
         var d = bit.match(/^d(\d+)$/);
         if (d) {
             d = parseInt(d[1], 10);
             if (d > 1 && d < 101)
-                return {roll: '/d' + d + ' (' + rollDie(d) + ')'};
+                return {roll: '#d' + d + ' (' + rollDie(d) + ')'};
         }
-        var attr = parseInt(user[bit], 10);
-        if (!attr && attr !== 0)
-            return '/' + bit;
+        var attr = parseInt(user[bit.slice(1).toLowerCase()], 10);
+        if (attr === 0)
+            return {roll: bit + '=(0)'};
+        if (!attr)
+            return bit;
         var roll = rollDie(6);
         var desc = '*' + roll + '=(' + (attr*roll) + ')';
-        return {roll: '/' + bit + desc};
+        return {roll: bit + desc};
     });
 }
 
