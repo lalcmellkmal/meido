@@ -273,7 +273,6 @@ function parseRolls(user, text) {
         if (!attr && attr !== 0)
             return '/' + bit;
         var roll = rollDie(6);
-        console.log(attr, roll, attr*roll);
         var desc = '*' + roll + '=(' + (attr*roll) + ')';
         return {roll: '/' + bit + desc};
     });
