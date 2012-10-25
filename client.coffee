@@ -133,7 +133,7 @@ class PlayerCards extends Backbone.Collection
     comparator: (card) -> card.id
 
 class PlayerCardsView extends AutoView
-    id: 'idCards'
+    id: 'user'
     links:
         add: 'add'
         reset: 'render'
@@ -193,14 +193,14 @@ initialDomSetup = ->
 
     $game = $('<div/>', id: 'game').appendTo 'body'
     $game.append asTarget 'title', '<h1/>'
-    $game.append $ '<ul/>', id: 'idCards'
+    $game.append $ '<ul/>', id: 'user'
 
     $game.addClass 'mutable'
     return
 
 initialDomSetup()
 setupModel 'game', Game
-setupModel 'idCards', PlayerCards
+setupModel 'user', PlayerCards
 setupModel 'social', Social
 setupModel 'log', Log
 setupViews [SystemView, GameView, PlayerCardsView, SocialView, LogView]

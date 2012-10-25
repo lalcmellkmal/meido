@@ -187,16 +187,16 @@ function refreshUserList(users) {
         if (err)
             throw err;
         if (changed)
-            emit('reset', 'idCards', _.values(USERS));
+            emit('reset', 'user', _.values(USERS));
     });
 }
 
 userEmitter.on('new', function (user) {
-    emit('add', 'idCards', {obj: user});
+    emit('add', 'user', {obj: user});
 });
 
 userEmitter.on('gone', function (user) {
-    emit('remove', 'idCards', {id: user.id});
+    emit('remove', 'user', {id: user.id});
 });
 
 /* SOCIAL */
@@ -277,7 +277,7 @@ userEmitter.on('session', function (session, user) {
         if (user.name)
             users.push(user);
     }
-    emitToSession(session, 'reset', 'idCards', {objs: users});
+    emitToSession(session, 'reset', 'user', {objs: users});
 });
 
 COMMANDS.nick = function (userId, name, cb) {
@@ -293,7 +293,7 @@ COMMANDS.nick = function (userId, name, cb) {
             return gameLog("That's already your name.", {}, cb);
 
         gameLog([{name: old}, ' changed their name to ', {name:name}, '.']);
-        emit('set', 'idCards', {id: userId, name: name});
+        emit('set', 'user', {id: userId, name: name});
         if (userId in USERS)
             USERS[userId].name = name;
         r.hset('rpg:user:'+userId, 'name', name, cb);
