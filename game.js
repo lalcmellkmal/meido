@@ -50,26 +50,29 @@ function subscribeToBroker() {
 
 function onBrokerMessage(channel, msg) {
     msg = JSON.parse(msg);
-    var user = msg.u;
+    var userId = msg.u;
     if (!msg.a) {
-        var obj = msg.o, action = obj.a;
+        var obj = msg.o, action = obj.a, user = USERS[userId];
         if (typeof action != 'string')
-            return console.error("Bad message from", user); // kick?
+            return console.error("Bad message from", userId); // kick?
+        if (!user)
+            return console.error("Message from non-user", userId);
 
         if (config.DEBUG)
             console.log("> " + JSON.stringify(obj));
         var func = DISPATCH[action];
         if (!func)
-            return console.warn("Unknown message type", action, "from", user);
-        var timeout = setTimeout(brokerTimeout.bind(null,user,action), 3000);
-        func(user, obj, brokerReturn.bind(null, user, timeout));
+            return console.warn("Unknown message type", action, "from", userId);
+
+        var timeout = setTimeout(brokerTimeout.bind(null,userId,action), 3000);
+        func(user, obj, brokerReturn.bind(null, userId, timeout));
     }
     else if (msg.a == 'new')
-        onNewUser(user);
+        onNewUser(userId);
     else if (msg.a == 'session')
-        userEmitter.emit('session', msg.c, user);
+        userEmitter.emit('session', msg.c, userId);
     else if (msg.a == 'gone')
-        onUserGone(user);
+        onUserGone(userId);
     else if (msg.a == 'userList')
         refreshUserList(msg.users);
     else
@@ -240,26 +243,22 @@ userEmitter.on('gone', function (user) {
 });
 
 var chatId = 0;
-DISPATCH.chat = function (userId, msg, cb) {
+DISPATCH.chat = function (user, msg, cb) {
     if (typeof msg.text != 'string')
         return cb("Bad chat message.");
     if (msg.text[0] == '/') {
         var m = msg.text.match(/^\/(\w+)(?:|\s+(.*))$/);
         var cmd = m && COMMANDS[m[1].toLowerCase()];
         if (cmd)
-            cmd(userId, m[2] || '', cb);
+            cmd(user.id, m[2] || '', cb);
         else
-            logTo(userId, "Invalid command.");
+            logTo(user.id, "Invalid command.");
         return;
     }
     var text = msg.text.trim();
     if (!text)
         return cb("Empty chat message.");
-    r.hget('rpg:user:' + userId, 'name', function (err, name) {
-        if (err)
-            return cb(err);
-        gameLog(text, {who: name}, cb);
-    });
+    gameLog(text, {who: user.name}, cb);
 };
 
 /* GAME STATE */
@@ -285,6 +284,7 @@ COMMANDS.nick = function (userId, name, cb) {
     name = name.replace(/[^\w .?\/'\-+!#&`~]+/g, '').trim().slice(0, 20);
     if (!name)
         return cb('Bad name.');
+    var user = USERS[userId];
     var key = 'rpg:user:' + userId;
     r.hget(key, 'name', function (err, old) {
         if (err)
@@ -300,7 +300,7 @@ COMMANDS.nick = function (userId, name, cb) {
     });
 };
 
-DISPATCH.set = function (userId, msg, cb) {
+DISPATCH.set = function (user, msg, cb) {
     if (msg.t != 'game')
         return cb("Bad target.");
     delete msg.t;
