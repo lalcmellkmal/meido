@@ -250,10 +250,7 @@ DISPATCH.chat = function (user, msg, cb) {
         var m = msg.text.match(/^\/(\w+)(?:|\s+(.*))$/);
         var cmd = m && COMMANDS[m[1].toLowerCase()];
         if (cmd)
-            cmd(user.id, m[2] || '', cb);
-        else
-            logTo(user.id, "Invalid command.");
-        return;
+            return cmd(user.id, m[2] || '', cb);
     }
     var text = msg.text.trim();
     if (!text)
@@ -262,7 +259,7 @@ DISPATCH.chat = function (user, msg, cb) {
 };
 
 function parseRolls(user, text) {
-    return text.split(/#([a-zA-Z0-9]+)/g).map(function (bit, i) {
+    return text.split(/\/([a-zA-Z0-9]+)/g).map(function (bit, i) {
         if (i % 2 == 0)
             return bit;
         bit = bit.toLowerCase();
@@ -270,15 +267,15 @@ function parseRolls(user, text) {
         if (d) {
             d = parseInt(d[1], 10);
             if (d > 1 && d < 101)
-                return {roll: '#d' + d + ' (' + rollDie(d) + ')'};
+                return {roll: '/d' + d + ' (' + rollDie(d) + ')'};
         }
         var attr = parseInt(user[bit], 10);
         if (!attr && attr !== 0)
-            return '#' + bit;
+            return '/' + bit;
         var roll = rollDie(6);
         console.log(attr, roll, attr*roll);
         var desc = '*' + roll + '=(' + (attr*roll) + ')';
-        return {roll: '#' + bit + desc};
+        return {roll: '/' + bit + desc};
     });
 }
 
