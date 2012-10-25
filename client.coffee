@@ -116,6 +116,8 @@ class PlayerCard extends Backbone.Model
 
 class PlayerCardView extends AutoView
     tagName: 'li'
+    events:
+        'click .target': 'writeTarget'
     links:
         change: 'render'
         remove: 'remove'
@@ -125,7 +127,9 @@ class PlayerCardView extends AutoView
         attrs = @model.attributes
         @$el.append $('<b/>', text: attrs.name), '<br>'
         for attr in maidAttrs
-            @$el.append textNode("#{attr}: #{attrs[attr] || 0}"), '<br>'
+            key = attr.toLowerCase()
+            $a = $ '<span/>', text: "#{attr}: #{attrs[key] || 0}"
+            @$el.append asTarget(key, $a), '<br>'
         this
 
 class PlayerCards extends Backbone.Collection

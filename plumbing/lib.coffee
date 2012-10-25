@@ -38,7 +38,7 @@ class AutoView extends Backbone.View
         null
 
     writeTarget: (event) ->
-        event.preventDefault()
+        event.stopPropagation()
         $t = $ event.target
         path = $t.data 'path'
         if path
@@ -46,10 +46,17 @@ class AutoView extends Backbone.View
             newVal = prompt "Enter new #{path}."
             $t.css color: 'inherit'
             if newVal
-                setter = {t: @id}
-                setter[path] = newVal
-                send 'set', setter
+                setter = if @id then {t: @id} else @findPath $t
+                if setter
+                    setter[path] = newVal
+                    send 'set', setter
         return
+
+    findPath: ($child) ->
+        for t in $child.parents()
+            if t.id
+                return {t: t.id, id: @model.id}
+        null
 
 asTarget = (path, el) ->
     $(el).addClass('target').data path: path

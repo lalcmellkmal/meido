@@ -300,23 +300,44 @@ COMMANDS.nick = function (userId, name, cb) {
     });
 };
 
+var validTargets = ['game', 'user'];
+
 DISPATCH.set = function (user, msg, cb) {
-    if (msg.t != 'game')
+    var target = msg.t, targetId = 0;
+    if (validTargets.indexOf(target) < 0)
         return cb("Bad target.");
+    var key = 'rpg:' + target;
     delete msg.t;
     if (msg.id) {
+        targetId = +msg.id;
+        if (!targetId || targetId < 1)
+            return cb("Bad target ID.");
+        key = key + ':' + targetId;
         delete msg.id;
-        return cb("TODO");
     }
+
+    /* attrs to set; should really check these too */
     for (var k in msg)
-        if (typeof msg[k] != 'string')
-            return cb("Bad non-string value.");
+        if (k == 'email' || typeof msg[k] != 'string' || !msg[k].trim())
+            delete msg[k];
+
     if (_.isEmpty(msg))
         return cb("Nothing to set.");
-    r.hmset('rpg:game', msg, function (err) {
+
+    r.hmset(key, msg, function (err) {
         if (err)
             return cb(err);
-        emit('set', 'game', msg);
+        if (targetId)
+            msg.id = targetId;
+        emit('set', target, msg);
+
+        if (target == 'user') {
+            var dest = USERS[targetId];
+            if (dest)
+                for (var k in msg)
+                    dest[k] = msg[k];
+        }
+
         cb(null);
     });
 };
