@@ -1,4 +1,5 @@
 var _ = require('underscore'),
+    async = require('async'),
     common = require('./common'),
     config = require('./plumbing/config'),
     events = require('events');
@@ -63,24 +64,19 @@ function onBrokerMessage(channel, msg) {
         var timeout = setTimeout(brokerTimeout.bind(null,user,action), 3000);
         func(user, obj, brokerReturn.bind(null, user, timeout));
     }
-    else if (msg.a == 'new') {
-        console.log('Added user #' + user);
-        USERS[user] = true;
-        userEmitter.emit('new', user);
-    }
+    else if (msg.a == 'new')
+        onNewUser(user);
     else if (msg.a == 'session')
         userEmitter.emit('session', msg.c, user);
     else if (msg.a == 'gone') {
         console.log('Dropped #' + user);
-        delete USERS[user];
-        userEmitter.emit('gone', user);
+        if (USERS[user]) {
+            userEmitter.emit('gone', USERS[user]);
+            delete USERS[user];
+        }
     }
-    else if (msg.a == 'userList') {
-        USERS = {};
-        msg.users.forEach(function (id) {
-            USERS[id] = true;
-        });
-    }
+    else if (msg.a == 'userList')
+        refreshUserList(msg.users);
     else
         console.warn("Unrecognized", msg);
 }
@@ -104,13 +100,69 @@ function brokerTimeout(user, a) {
 }
 
 userEmitter.on('session', function (session, userId) {
-    r.hgetall('rpg:user:'+userId, function (err, user) {
+    emitToSession(session, 'set', 'system', {status: ''});
+});
+
+function onNewUser(userId) {
+    USERS[userId] = {id: userId};
+    refreshUser(userId, function (err, user) {
         if (err)
             throw err;
-        else if (!user)
-            return console.error("No user info?!");
-        emitToSession(session, 'set', 'system', {status: ''});
+        if (user)
+            userEmitter.emit('new', user);
     });
+}
+
+function refreshUser(userId, cb) {
+    r.hgetall('rpg:user:' + userId, function (err, user) {
+        if (err)
+            return cb(err);
+        if (user && userId in USERS) {
+            delete user.email;
+            user.id = userId;
+            USERS[userId] = user;
+        }
+        cb(null, USERS[userId]);
+    });
+}
+
+function refreshUserList(users) {
+    var old = {};
+    _.extend(old, USERS);
+
+    /* Update USERS immediately */
+    var needUpdate = [];
+    users.forEach(function (id) {
+        if (id in USERS) {
+            /* don't need to refresh this user */
+            delete old[id];
+        }
+        else {
+            USERS[id] = {id: id};
+            needUpdate.push(id);
+        }
+    });
+    var changed = needUpdate.length > 0;
+    for (var oldId in old) {
+        changed = true;
+        delete USERS[oldId];
+    }
+
+    /* Fill cache in the background */
+    async.forEach(needUpdate, refreshUser, function (err) {
+        if (err)
+            throw err;
+        if (changed)
+            emit('reset', 'idCards', _.values(USERS));
+    });
+}
+
+userEmitter.on('new', function (user) {
+    emit('add', 'idCards', {obj: user});
+});
+
+userEmitter.on('gone', function (user) {
+    emit('remove', 'idCards', {id: user.id});
 });
 
 /* SOCIAL */
@@ -144,20 +196,16 @@ function sendChatHistory(session) {
 }
 userEmitter.on('session', sendChatHistory);
 
+function prettyName(user) {
+    return {name: user && user.name || '<anon>'};
+}
+
 userEmitter.on('new', function (user) {
-    r.hget('rpg:user:'+user, 'name', function (err, name) {
-        if (err) throw err;
-        if (name)
-            gameLog([{name: name}, " joined."]);
-    });
+    gameLog([prettyName(user), " joined."]);
 });
 
 userEmitter.on('gone', function (user) {
-    r.hget('rpg:user:'+user, 'name', function (err, name) {
-        if (err) throw err;
-        if (name)
-            gameLog([{name: name}, " left."]);
-    });
+    gameLog([prettyName(user), " left."]);
 });
 
 var chatId = 0;
@@ -192,8 +240,14 @@ userEmitter.on('session', function (session, user) {
         if (game)
             emitToSession(session, 'set', 'game', game);
     });
-    var players = [{name: 'maid'}, {name: 'second maid'}];
-    emitToSession(session, 'reset', 'idCards', {objs: players});
+    /* Only send fully-loaded cards */
+    var users = [];
+    for (var id in USERS) {
+        var user = USERS[id];
+        if (user.name)
+            users.push(user);
+    }
+    emitToSession(session, 'reset', 'idCards', {objs: users});
 });
 
 COMMANDS.title = function (userId, title, cb) {
@@ -213,7 +267,11 @@ COMMANDS.nick = function (userId, name, cb) {
             throw err;
         if (old == name)
             return gameLog("That's already your name.", {}, cb);
+
         gameLog([{name: old}, ' changed their name to ', {name:name}, '.']);
+        emit('set', 'idCards', {id: userId, name: name});
+        if (userId in USERS)
+            USERS[userId].name = name;
         r.hset('rpg:user:'+userId, 'name', name, cb);
     });
 };

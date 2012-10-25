@@ -116,7 +116,10 @@ class PlayerCard extends Backbone.Model
 
 class PlayerCardView extends AutoView
     tagName: 'li'
-    links: change: 'render'
+    links:
+        change: 'render'
+        remove: 'remove'
+
     render: ->
         @$el.empty()
         attrs = @model.attributes
@@ -127,17 +130,20 @@ class PlayerCardView extends AutoView
 
 class PlayerCards extends Backbone.Collection
     model: PlayerCard
+    comparator: (card) -> card.id
 
 class PlayerCardsView extends AutoView
     id: 'idCards'
     links:
+        add: 'add'
         reset: 'render'
 
+    add: (card) ->
+        @$el.append new PlayerCardView(model: card).render().el
+
     render: ->
-        $dest = @$el
-        $dest.empty()
-        @model.forEach (card) =>
-            $dest.append new PlayerCardView(model: card).render().el
+        @$el.empty()
+        @model.each @add, this
         this
 
 class Game extends Backbone.Model
