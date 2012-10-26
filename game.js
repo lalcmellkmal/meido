@@ -291,7 +291,7 @@ function parseRolls(user, text) {
                 };
             }
         }
-        var attr = parseInt(user[key], 10);
+        var attr = parseQuantity(user[key]);
         if (attr === 0)
             return {roll: key + ' = 0'};
         if (!attr)
@@ -306,6 +306,28 @@ function parseRolls(user, text) {
 
 function parseTruth(s) {
     return typeof s == 'string' && s.match(/^(?:1|yes|true|ok|mute)/i);
+}
+
+function parseQuantity(s) {
+    if (typeof s == 'number')
+        return Math.round(s);
+    if (typeof s != 'string')
+        return null;
+    s = s.trim();
+    var m = s.match(/^([+\-]?[\d,]+)(.*)/);
+    if (!m)
+        return null;
+    var quantity = parseInt(m[1].replace(/,/g, ''), 10);
+    s = m[2];
+    /* modifiers */
+    while (true) {
+        var m = s.match(/([+\-]?[\d,]+)(.*)/);
+        if (!m)
+            break;
+        quantity += parseInt(m[1].replace(/,/g, ''), 10);
+        s = m[2];
+    }
+    return quantity;
 }
 
 function rollDie(n) {
