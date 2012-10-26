@@ -115,7 +115,7 @@ class SocialView extends AutoView
         false
 
 basicAttrs = "Spirit,Favor,Stress,Athletics,Affection,Skill,Cunning,Luck,Will".split /,/g
-moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers".split /,/g
+moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers,Name Color".split /,/g
 
 attrKeyFromName = (name) ->
     name[0].toLowerCase() + name.slice(1).replace(/\s+/g, '')
