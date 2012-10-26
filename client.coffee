@@ -115,7 +115,8 @@ class SocialView extends AutoView
         false
 
 basicAttrs = "Spirit,Favor,Stress,Athletics,Affection,Skill,Cunning,Luck,Will".split /,/g
-moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers,Name Color".split /,/g
+moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers".split /,/g
+adminAttrs = "Name Color,Muted".split /,/g
 
 attrKeyFromName = (name) ->
     name[0].toLowerCase() + name.slice(1).replace(/\s+/g, '')
@@ -147,10 +148,16 @@ class PlayerCardView extends AutoView
         $basic = $('<td/>', 'class': 'basic').appendTo $row
         for name in basicAttrs
             $basic.append @makeAttr(name), '<br>'
+
         if attrs.expanded
             $expanded = $('<td/>', 'class': 'expanded').appendTo $row
             for name in moreAttrs
                 $expanded.append @makeAttr(name), '<br>'
+
+            if parseInt models.game.get 'gm'
+                $expanded = $('<td/>', 'class': 'admin').appendTo $row
+                for name in adminAttrs
+                    $expanded.append @makeAttr(name), '<br>'
 
         @$el.empty().append $table
         this

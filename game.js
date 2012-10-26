@@ -2,7 +2,8 @@ var _ = require('underscore'),
     async = require('async'),
     common = require('./common'),
     config = require('./plumbing/config'),
-    events = require('events');
+    events = require('events'),
+    gameConfig = require('./config');
 
 function redisClient() {
     return require('redis').createClient(config.REDIS_PORT);
@@ -247,6 +248,8 @@ userEmitter.on('gone', function (user) {
 
 var chatId = 0;
 DISPATCH.chat = function (user, msg, cb) {
+    if (parseTruth(user.muted))
+        return cb("You are muted.");
     if (typeof msg.text != 'string')
         return cb("Bad chat message.");
     if (msg.text[0] == '/') {
@@ -302,19 +305,30 @@ function parseRolls(user, text) {
     });
 }
 
+function parseTruth(s) {
+    return typeof s == 'string' && s.match(/^(?:1|yes|true|ok|mute)/i);
+}
+
 function rollDie(n) {
     return Math.floor(Math.random() * n) + 1;
 }
 
 /* GAME STATE */
 
-userEmitter.on('session', function (session, user) {
-    r.hgetall('rpg:game', function (err, game) {
+userEmitter.on('session', function (session, userId) {
+    var m = r.multi();
+    m.hgetall('rpg:game');
+    m.hget('rpg:user:' + userId, 'email');
+    m.exec(function (err, rs) {
         if (err)
             throw err;
-        if (game)
+        var game = rs[0], email = rs[1];
+        if (game) {
+            game.gm = (gameConfig.GMS.indexOf(email) >= 0) ? '1' : '0';
             emitToSession(session, 'set', 'game', game);
+        }
     });
+
     /* Only send fully-loaded cards */
     var users = [];
     for (var id in USERS) {
@@ -346,6 +360,7 @@ COMMANDS.nick = function (userId, name, cb) {
 };
 
 var validTargets = ['game', 'user'];
+var invalidAttrs = ['email', 'gm'];
 
 DISPATCH.set = function (user, msg, cb) {
     var target = msg.t, targetId = 0;
@@ -363,7 +378,7 @@ DISPATCH.set = function (user, msg, cb) {
 
     /* attrs to set; should really check these too */
     for (var k in msg)
-        if (k == 'email' || typeof msg[k] != 'string' || !msg[k].trim())
+        if (invalidAttrs.indexOf(k) >= 0 || typeof msg[k] != 'string' || !msg[k].trim())
             delete msg[k];
 
     if (_.isEmpty(msg))
