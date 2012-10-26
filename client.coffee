@@ -1,7 +1,7 @@
 class LogEntry extends Backbone.Model
 
 class LogEntryView extends AutoView
-    tag: 'li'
+    tagName: 'li'
     links:
         change: 'render'
         remove: 'remove'
