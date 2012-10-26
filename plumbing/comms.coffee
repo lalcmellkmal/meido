@@ -27,6 +27,7 @@ dispatch =
     upgrade: ->
         src = @src
         (-> eval(src)).call window
+        $('link[rel=stylesheet]').attr 'href', @css
         return
 
 window.sock = new window.SockJS "<%= SOCKJS_URL %>"

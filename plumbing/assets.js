@@ -39,6 +39,7 @@ function buildAssets(cb) {
     async.series([
         makePacked,
         reader('packed.js'),
+        reader('../style.css'),
         reader('index.html'),
     ],
     function (err) {
@@ -48,14 +49,20 @@ function buildAssets(cb) {
         var packedJs = files['packed.js'];
         var packedJsPath = 'client-' + md5(packedJs).slice(0, 8) + '.js';
 
+        var css = files['../style.css'];
+        var cssPath = 'style-' + md5(css).slice(0, 8) + '.css';
+
         var html = files['index.html'].toString('utf8');
         html = new Buffer(_.template(html)({
             CLIENT: packedJsPath,
+            CSS: cssPath,
         }), 'utf8');
 
         ASSETS = {
             packedJs: packedJs,
             packedJsPath: '/'+packedJsPath,
+            styleCss: css,
+            styleCssPath: '/'+cssPath,
             indexHtml: html,
             indexHtmlMD5: '"' + md5(html) + '"',
         };
@@ -103,6 +110,18 @@ exports.serveAssets = function (req, resp, next) {
         resp.end(req.method == 'GET' ? ASSETS.packedJs : null);
         return;
     }
+    else if (url.pathname == ASSETS.styleCssPath) {
+        var headers = {
+            'Content-Type': 'text/css',
+            'Content-Length': ASSETS.styleCss.length,
+            'Cache-Control': 'max-age=600000'
+        };
+        if (config.DEBUG)
+            headers['Cache-Control'] = 'no-cache';
+        resp.writeHead(200, headers);
+        resp.end(req.method == 'GET' ? ASSETS.styleCss : null);
+        return;
+    }
     next();
 };
 
@@ -113,7 +132,13 @@ function upgradeClient(r, cb) {
         fs.readFile('client.js', 'UTF-8', function (err, src) {
             if (err)
                 return cb(err);
-            var msg = {a: 'broadcast', o: {a: 'upgrade', src: src}};
+
+            var upgrade = {
+                a: 'upgrade',
+                src: src,
+                css: ASSETS.styleCssPath,
+            };
+            var msg = {a: 'broadcast', o: upgrade};
             r.publish(config.REDIS_CHANNEL, JSON.stringify(msg), cb);
         });
     });
