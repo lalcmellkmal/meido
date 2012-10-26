@@ -1,4 +1,5 @@
 var _ = require('underscore'),
+    async = require('async'),
     config = require('./config'),
     crypto = require('crypto'),
     exec = require('child_process').exec,
@@ -23,31 +24,53 @@ function md5(buffer) {
 var ASSETS = {};
 
 function buildAssets(cb) {
-    exec('make packed.js', function (err, stderr) {
-        if (err) {
-            process.stderr.write(stderr);
-            return cb(err);
-        }
-        fs.readFile('packed.js', function (err, packedJs) {
-            if (err) return cb(err);
-            var packedJsPath = 'client-' + md5(packedJs).slice(0, 8) + '.js';
-            var built = {
-                packedJs: packedJs,
-                packedJsPath: '/'+packedJsPath,
-            };
-            fs.readFile('index.html', 'utf8', function (err, html) {
-                if (err) return cb(err);
-                html = _.template(html)({CLIENT: packedJsPath});
-                html = new Buffer(html, 'utf8');
-                built.indexHtml = html;
-                built.indexHtmlMD5 = '"' + md5(html) + '"';
-                ASSETS = built;
-                cb(null);
+    var files = {};
+
+    function reader(filename) {
+        return function (cb) {
+            fs.readFile(filename, function (err, file) {
+                if (!err)
+                    files[filename] = file;
+                cb(err);
             });
-        });
+        };
+    }
+
+    async.series([
+        makePacked,
+        reader('packed.js'),
+        reader('index.html'),
+    ],
+    function (err) {
+        if (err)
+            return cb(err);
+
+        var packedJs = files['packed.js'];
+        var packedJsPath = 'client-' + md5(packedJs).slice(0, 8) + '.js';
+
+        var html = files['index.html'].toString('utf8');
+        html = new Buffer(_.template(html)({
+            CLIENT: packedJsPath,
+        }), 'utf8');
+
+        ASSETS = {
+            packedJs: packedJs,
+            packedJsPath: '/'+packedJsPath,
+            indexHtml: html,
+            indexHtmlMD5: '"' + md5(html) + '"',
+        };
+        cb(null);
     });
 }
 exports.buildAssets = buildAssets;
+
+function makePacked(cb) {
+    exec('make packed.js', function (err, stderr) {
+        if (err)
+            process.stderr.write(stderr);
+        cb(err);
+    });
+}
 
 exports.serveAssets = function (req, resp, next) {
     if (req.method != 'GET' && req.method != 'HEAD')
