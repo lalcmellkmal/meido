@@ -76,8 +76,8 @@ a.act {
 .attr-spirit, .attr-favor, .attr-stress {
 	color: blue;
 }
-.expanded {
-	padding-left: 2em;
+.expanded, .admin {
+	padding-left: 1em;
 }
 
 /* LOG SIDE */

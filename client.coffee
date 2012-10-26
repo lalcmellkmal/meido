@@ -122,6 +122,8 @@ attrKeyFromName = (name) ->
     name[0].toLowerCase() + name.slice(1).replace(/\s+/g, '')
 
 class PlayerCard extends Backbone.Model
+    defaults:
+        muted: 'no'
 
 class PlayerCardView extends AutoView
     tagName: 'li'
