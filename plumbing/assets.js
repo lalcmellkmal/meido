@@ -60,9 +60,9 @@ function buildAssets(cb) {
 
         ASSETS = {
             packedJs: packedJs,
-            packedJsPath: '/'+packedJsPath,
+            packedJsPath: packedJsPath,
             styleCss: css,
-            styleCssPath: '/'+cssPath,
+            styleCssPath: cssPath,
             indexHtml: html,
             indexHtmlMD5: '"' + md5(html) + '"',
         };
@@ -98,7 +98,7 @@ exports.serveAssets = function (req, resp, next) {
         resp.end(req.method == 'GET' ? ASSETS.indexHtml : null);
         return;
     }
-    else if (url.pathname == ASSETS.packedJsPath) {
+    else if (url.pathname == '/'+ASSETS.packedJsPath) {
         var headers = {
             'Content-Type': 'application/javascript',
             'Content-Length': ASSETS.packedJs.length,
@@ -110,7 +110,7 @@ exports.serveAssets = function (req, resp, next) {
         resp.end(req.method == 'GET' ? ASSETS.packedJs : null);
         return;
     }
-    else if (url.pathname == ASSETS.styleCssPath) {
+    else if (url.pathname == '/'+ASSETS.styleCssPath) {
         var headers = {
             'Content-Type': 'text/css',
             'Content-Length': ASSETS.styleCss.length,
