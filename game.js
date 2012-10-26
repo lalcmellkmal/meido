@@ -255,7 +255,7 @@ DISPATCH.chat = function (user, msg, cb) {
         var m = msg.text.match(/^\/(\w+)(?:|\s+(.*))$/);
         var cmd = m && COMMANDS[m[1].toLowerCase()];
         if (cmd)
-            return cmd(user.id, m[2] || '', cb);
+            return cmd(user, m[2] || '', cb);
     }
     var text = msg.text.trim();
     if (!text)
@@ -338,24 +338,17 @@ userEmitter.on('session', function (session, userId) {
     emitToSession(session, 'reset', 'user', {objs: users});
 });
 
-COMMANDS.nick = function (userId, name, cb) {
+COMMANDS.nick = function (user, name, cb) {
     name = name.replace(/[^\w .?\/'\-+!#&`~]+/g, '').trim().slice(0, 20);
     if (!name)
         return cb('Bad name.');
-    var user = USERS[userId];
-    var key = 'rpg:user:' + userId;
-    r.hget(key, 'name', function (err, old) {
-        if (err)
-            throw err;
-        if (old == name)
-            return gameLog("That's already your name.", {}, cb);
+    if (user.name == name)
+        return gameLog("That's already your name.", {}, cb);
 
-        gameLog([{name: old}, ' changed their name to ', {name:name}, '.']);
-        emit('set', 'user', {id: userId, name: name});
-        if (userId in USERS)
-            USERS[userId].name = name;
-        r.hset('rpg:user:'+userId, 'name', name, cb);
-    });
+    gameLog([{name: user.name}, ' changed their name to ', {name:name}, '.']);
+    emit('set', 'user', {id: user.id, name: name});
+    user.name = name;
+    r.hset('rpg:user:'+user.id, 'name', name, cb);
 };
 
 var validTargets = ['game', 'user'];
