@@ -39,7 +39,7 @@ class AutoView extends Backbone.View
 
     writeTarget: (event) ->
         event.stopPropagation()
-        $t = $ event.target
+        $t = $ event.currentTarget
         path = _.filter $t.attr('class').split(/\s+/g),
                         (cls) -> cls.match /^attr-/
         if path.length == 1
