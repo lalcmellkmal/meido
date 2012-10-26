@@ -114,7 +114,11 @@ class SocialView extends AutoView
         @model.set unseenMessage: false
         false
 
-maidAttrs = ['Athletics', 'Affection', 'Skill', 'Cunning', 'Luck', 'Will']
+basicAttrs = "Spirit,Favor,Stress,Athletics,Affection,Skill,Cunning,Luck,Will".split /,/g
+moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers".split /,/g
+
+attrKeyFromName = (name) ->
+    name[0].toLowerCase() + name.slice(1).replace(/\s+/g, '')
 
 class PlayerCard extends Backbone.Model
 
@@ -122,19 +126,44 @@ class PlayerCardView extends AutoView
     tagName: 'li'
     events:
         'click .target': 'writeTarget'
+        'click .more': 'toggleExpanded'
+
     links:
         change: 'render'
         remove: 'remove'
 
     render: ->
-        @$el.empty()
         attrs = @model.attributes
-        @$el.append $('<b/>', text: attrs.name), '<br>'
-        for attr in maidAttrs
-            key = attr.toLowerCase()
-            $a = $ '<span/>', text: "#{attr}: #{attrs[key] || 0}"
-            @$el.append asTarget(key, $a), '<br>'
+        $table = $ '<table/>'
+
+        $row = $('<tr/>').appendTo $table
+        $header = $('<th/>', text: attrs.name).appendTo $row
+        $header.append ' ', $ '<a/>',
+            text: if attrs.expanded then 'x' else '...'
+            'class': 'act more'
+            href: '#'
+
+        $row = $('<tr/>').appendTo $table
+        $basic = $('<td/>', 'class': 'basic').appendTo $row
+        for name in basicAttrs
+            $basic.append @makeAttr(name), '<br>'
+        if attrs.expanded
+            $expanded = $('<td/>', 'class': 'expanded').appendTo $row
+            for name in moreAttrs
+                $expanded.append @makeAttr(name), '<br>'
+
+        @$el.empty().append $table
         this
+
+    makeAttr: (name) ->
+        key = attrKeyFromName name
+        $em = $('<em/>', text: name).append ':&nbsp;'
+        $a = $('<span/>').append $em, textNode "#{@model.get(key) || 0}"
+        asTarget(key, $a)
+
+    toggleExpanded: (event) ->
+        @model.set 'expanded', not @model.get 'expanded'
+        false
 
 class PlayerCards extends Backbone.Collection
     model: PlayerCard

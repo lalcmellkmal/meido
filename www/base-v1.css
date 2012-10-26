@@ -38,10 +38,17 @@ body {
 
 
 /* GAME SIDE */
+b {
+	color: black;
+}
 h1 {
 	font-size: 16pt;
 	margin: 0;
 	padding: 0.2em;
+}
+table, tr, td {
+	border: 0;
+	vertical-align: top;
 }
 #user li {
 	background-color: white;
@@ -52,8 +59,25 @@ h1 {
 	padding: 0.5em 1em;
 	margin: 0.5em;
 }
+table em {
+	color: #067;
+}
 .mutable .target {
 	cursor: pointer;
+}
+a.act {
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	display: inline-block;
+	padding: 0 0.2em;
+	margin: 0 0.5em;
+	text-decoration: none;
+}
+.attr-spirit, .attr-favor, .attr-stress {
+	color: blue;
+}
+.expanded {
+	padding-left: 2em;
 }
 
 /* LOG SIDE */
