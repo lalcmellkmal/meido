@@ -37,7 +37,7 @@ window.getSessionId = ->
     key = "<%= ID_COOKIE_NAME %>"
     id = localStorage.getItem key
     unless id
-        id = common.randomId()
+        id = "#{Math.floor(Math.random() * 1e16) + 1}"
         localStorage.setItem key, id
     return id
 

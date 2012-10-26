@@ -58,7 +58,7 @@ class LogView extends AutoView
         e = @el
         alreadyAtBottom = e.scrollTop + 20 >= e.scrollHeight - e.clientHeight
         @add entry
-        overflow = @model.length - common.CLIENT_CHAT_LENGTH
+        overflow = @model.length - 200
         if overflow > 0
             for i in [1..overflow]
                 @model.shift()

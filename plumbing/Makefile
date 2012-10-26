@@ -1,7 +1,5 @@
-packed.js: ../common.js .comms.js client.js
-	@echo "(function () { var common = {};" > $@
-	@cat $^ >> $@
-	@echo "}).call(this);" >> $@
+packed.js: .comms.js client.js
+	@cat $^ > $@
 
 client.js: lib.coffee ../client.coffee
 	@coffee -jcp $^ > $@

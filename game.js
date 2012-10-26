@@ -1,6 +1,5 @@
 var _ = require('underscore'),
     async = require('async'),
-    common = require('./common'),
     config = require('./plumbing/config'),
     events = require('events'),
     gameConfig = require('./config');
@@ -227,7 +226,7 @@ function logTo(user, msg, extra) {
 }
 
 function sendChatHistory(session) {
-    r.lrange('rpg:chat', -common.CLIENT_CHAT_LENGTH, -1, function (err, chat) {
+    r.lrange('rpg:chat', -200, -1, function (err, chat) {
         if (err) throw err;
         emitToSession(session, 'reset', 'log', {objs: chat.map(JSON.parse)});
     });
