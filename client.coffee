@@ -169,7 +169,7 @@ class GameView extends AutoView
 
     render: ->
         attrs = @model.attributes
-        @$('h1').text(attrs.title).data(path: 'title')
+        @$('h1').text attrs.title
         this
 
 class SystemView extends AutoView

@@ -40,8 +40,10 @@ class AutoView extends Backbone.View
     writeTarget: (event) ->
         event.stopPropagation()
         $t = $ event.target
-        path = $t.data 'path'
-        if path
+        path = _.filter $t.attr('class').split(/\s+/g),
+                        (cls) -> cls.match /^attr-/
+        if path.length == 1
+            path = path[0].slice 5
             $t.css color: 'gray'
             newVal = prompt "Enter new #{path}."
             $t.css color: 'inherit'
@@ -62,7 +64,7 @@ class AutoView extends Backbone.View
         null
 
 asTarget = (path, el) ->
-    $(el).addClass('target').data path: path
+    $(el).addClass('target').addClass('attr-' + path)
 
 requestLogin = ->
     requestLogin = -> null
