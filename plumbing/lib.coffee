@@ -45,7 +45,7 @@ class AutoView extends Backbone.View
         if path.length == 1
             path = path[0].slice 5
             $t.css color: 'gray'
-            newVal = prompt "Enter new #{path}."
+            newVal = prompt "Enter new #{nameFromAttrKey path}."
             $t.css color: 'inherit'
             if newVal
                 setter = if @id then {t: @id} else @findPath $t
@@ -65,6 +65,9 @@ class AutoView extends Backbone.View
 
 asTarget = (path, el) ->
     $(el).addClass('target').addClass('attr-' + path)
+
+nameFromAttrKey = (key) ->
+    key.replace /[A-Z]/g, (c) -> " #{c.toLowerCase()}"
 
 requestLogin = ->
     requestLogin = -> null
