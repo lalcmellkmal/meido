@@ -94,6 +94,10 @@ time {
 	margin-left: 3em;
 	margin-bottom: 0.2em;
 }
+#log em {
+	color: gray;
+	font-style: normal;
+}
 #social {
 	position: relative;
 }
@@ -111,6 +115,7 @@ time {
 .error {
 	color: red;
 }
-.meta {
+.meta, #log .meta em {
 	color: gray;
+	font-style: italic;
 }
