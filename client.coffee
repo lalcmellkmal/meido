@@ -68,7 +68,8 @@ class LogView extends AutoView
         if alreadyAtBottom
             @$el.scrollTop e.scrollHeight
         else
-            models.social.set unseenMessage: true
+            if models.social.get('tab') == @id
+                models.social.set unseenMessage: true
         return
 
     reset: (log) ->
@@ -86,16 +87,23 @@ class LogView extends AutoView
     render: ->
         this
 
+class OocView extends LogView
+    id: 'ooc'
 
 class Social extends Backbone.Model
+    defaults:
+        tab: 'log'
 
 class SocialView extends AutoView
     id: 'social'
     events:
         submit: 'submitChat'
         'click #unseenMessageHint': 'scrollToUnseen',
+        'click .tab': 'chooseTab'
+
     links:
         'change:unseenMessage': 'unseenMessage'
+        'change:tab': 'displayTab'
 
     render: ->
         this
@@ -104,7 +112,7 @@ class SocialView extends AutoView
         $input = @$ '#chatInput'
         text = $input.val().trim()
         if text.length
-            send 'chat', text: text
+            send 'chat', text: text, t: @model.get 'tab'
             $input.val('').focus()
         false
 
@@ -116,6 +124,15 @@ class SocialView extends AutoView
         $log.scrollTop $log[0].scrollHeight
         @model.set unseenMessage: false
         false
+
+    chooseTab: (event) ->
+        tab = $(event.target).attr('href').replace '#', ''
+        @model.set tab: tab, unseenMessage: false
+        false
+
+    displayTab: (model, tab) ->
+        @$('ul').hide()
+        @$('#' + tab).show()
 
 basicAttrs = "Spirit,Favor,Stress,Athletics,Affection,Skill,Cunning,Luck,Will".split /,/g
 moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers".split /,/g
@@ -235,14 +252,24 @@ initialDomSetup = ->
     if window.domIsSetup
         return
     window.domIsSetup = true
-    $social = $('<form/>', id: 'social').appendTo 'body'
-    $log = $('<ul/>', id: 'log').appendTo $social
-    $('<input>', id: 'chatInput').appendTo $social
-    $('<a/>', {href: '', id: 'unseenMessageHint', text: 'New message ↓'}).appendTo($social).hide()
+    $social = $('<form/>', id: 'social').append [
+        $ '<ul/>', id: 'log'
+        $('<ul/>', id: 'ooc').hide()
+        $ '<input>', id: 'chatInput'
+        $ '<a/>', 'class': 'tab', text: 'main', href: '#log'
+        $ '<a/>', 'class': 'tab', text: 'ooc', href: '#ooc'
+        $('<a/>', {href: '', id: 'unseenMessageHint', text: 'New message ↓'}).hide()
+    ]
 
-    $game = $('<div/>', id: 'game').appendTo 'body'
-    $game.append asTarget 'title', '<h1/>'
-    $game.append $ '<ul/>', id: 'user'
+    $game = $('<div/>', id: 'game').append [
+        asTarget 'title', '<h1/>'
+        $ '<ul/>', id: 'user'
+    ]
+
+    $('body').append [
+        $social
+        $game
+    ]
 
     $game.addClass 'mutable'
     return
@@ -252,4 +279,5 @@ setupModel 'game', Game
 setupModel 'user', PlayerCards
 setupModel 'social', Social
 setupModel 'log', Log
-setupViews [SystemView, GameView, PlayerCardsView, SocialView, LogView]
+setupModel 'ooc', Log
+setupViews [SystemView, GameView, PlayerCardsView, SocialView, LogView, OocView]

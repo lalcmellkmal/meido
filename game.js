@@ -208,11 +208,12 @@ function gameLog(msg, extra, cb) {
     msg = {msg: msg, when: new Date().getTime()};
     if (extra)
         _.extend(msg, extra);
-    r.rpush('rpg:chat', JSON.stringify(msg), function (err, len) {
+    var medium = extra.where || 'log';
+    r.rpush('rpg:'+medium, JSON.stringify(msg), function (err, len) {
         if (err)
             return cb ? cb(err) : console.error(err);
         msg.id = len;
-        emit('add', 'log', {obj: msg});
+        emit('add', medium, {obj: msg});
         cb && cb(null);
     });
 }
@@ -222,13 +223,17 @@ function logTo(user, msg, extra) {
     msg = {msg: msg, when: now, id: 'U'+now};
     if (extra)
         _.extend(msg, extra);
-    emitTo(user.id || user, 'add', 'log', {obj: msg});
+    emitTo(user.id || user, 'add', extra.where || 'log', {obj: msg});
 }
 
 function sendChatHistory(session) {
-    r.lrange('rpg:chat', -200, -1, function (err, chat) {
+    var m = r.multi();
+    m.lrange('rpg:log', -200, -1);
+    m.lrange('rpg:ooc', -200, -1);
+    m.exec(function (err, rs) {
         if (err) throw err;
-        emitToSession(session, 'reset', 'log', {objs: chat.map(JSON.parse)});
+        emitToSession(session, 'reset', 'log', {objs: rs[0].map(JSON.parse)});
+        emitToSession(session, 'reset', 'ooc', {objs: rs[1].map(JSON.parse)});
     });
 }
 userEmitter.on('session', sendChatHistory);
@@ -251,6 +256,8 @@ DISPATCH.chat = function (user, msg, cb) {
         return cb("You are muted.");
     if (typeof msg.text != 'string')
         return cb("Bad chat message.");
+    if (['log', 'ooc'].indexOf(msg.t) < 0)
+        return cb("Bad chat medium.");
     if (msg.text[0] == '/') {
         var m = msg.text.match(/^\/(\w+)(?:|\s+(.*))$/);
         var cmd = m && COMMANDS[m[1].toLowerCase()];
@@ -262,7 +269,7 @@ DISPATCH.chat = function (user, msg, cb) {
     var text = msg.text.trim();
     if (!text)
         return cb("Empty chat message.");
-    var extra = {who: user.name};
+    var extra = {who: user.name, where: msg.t};
     if (user.nameColor)
         extra.color = user.nameColor;
     gameLog(parseRolls(user, text), extra, cb);

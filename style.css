@@ -20,13 +20,13 @@ body {
 	margin: 0 0 0 -100%;
 	width: 100%;
 }
-#log, #game {
+#social ul, #game {
 	overflow-x: hidden;
 	overflow-y: auto;
 	margin: 0;
 }
-#log {
-	height: 93%;
+#social ul {
+	height: 92%;
 	padding: 0.1em;
 }
 #system {
@@ -84,17 +84,20 @@ a.act {
 time {
 	color: #ddd;
 }
-#log {
+#social ul {
 	background: white;
 }
-#log li {
+#social #ooc {
+	background-image: url('oocback.png');
+}
+#social li {
 	list-style: none;
 	display: block;
 	text-indent: -3em;
 	margin-left: 3em;
 	margin-bottom: 0.2em;
 }
-#log em {
+#social em {
 	color: gray;
 	font-style: normal;
 }
@@ -104,6 +107,7 @@ time {
 #social input {
 	width: 99%;
 	border: solid 1px #ccc;
+	margin-bottom: 0;
 }
 #unseenMessageHint {
 	color: gray;
@@ -115,7 +119,15 @@ time {
 .error {
 	color: red;
 }
-.meta, #log .meta em {
+.meta, #social .meta em {
 	color: gray;
 	font-style: italic;
+}
+.tab {
+	color: gray;
+	display: inline-block;
+	font-size: 9pt;
+	margin: 0 3px;
+	padding: 0 2px;
+	text-decoration: none;
 }
