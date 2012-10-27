@@ -206,9 +206,14 @@ userEmitter.on('gone', function (user) {
 
 function gameLog(msg, extra, cb) {
     msg = {msg: msg, when: new Date().getTime()};
-    if (extra)
+    var medium = 'log';
+    if (extra) {
+        if (extra.where) {
+            medium = extra.where;
+            delete extra.where;
+        }
         _.extend(msg, extra);
-    var medium = extra.where || 'log';
+    }
     r.rpush('rpg:'+medium, JSON.stringify(msg), function (err, len) {
         if (err)
             return cb ? cb(err) : console.error(err);
@@ -221,9 +226,15 @@ function gameLog(msg, extra, cb) {
 function logTo(user, msg, extra) {
     var now = new Date().getTime();
     msg = {msg: msg, when: now, id: 'U'+now};
-    if (extra)
+    var medium = 'log';
+    if (extra) {
+        if (extra.where) {
+            medium = extra.where;
+            delete extra.where;
+        }
         _.extend(msg, extra);
-    emitTo(user.id || user, 'add', extra.where || 'log', {obj: msg});
+    }
+    emitTo(user.id || user, 'add', medium, {obj: msg});
 }
 
 function sendChatHistory(session) {
@@ -262,9 +273,11 @@ DISPATCH.chat = function (user, msg, cb) {
         var m = msg.text.match(/^\/(\w+)(?:|\s+(.*))$/);
         var cmd = m && COMMANDS[m[1].toLowerCase()];
         if (cmd)
-            return cmd(user, m[2] || '', cb);
-        else
-            return logTo(user, "Bad command.");
+            return cmd(user, m[2] || '', {where: m.t}, cb);
+        else {
+            logTo(user, "Bad command.", {where: m.t});
+            return cb(null);
+        }
     }
     var text = msg.text.trim();
     if (!text)
@@ -369,26 +382,27 @@ userEmitter.on('session', function (session, userId) {
     emitToSession(session, 'reset', 'user', {objs: users});
 });
 
-COMMANDS.help = function (user, what, cb) {
-    logTo(user, "Commands: /nick <new name>, /me <does action>");
+COMMANDS.help = function (user, what, extra, cb) {
+    logTo(user, "Commands: /nick <new name>, /me <does action>", extra);
     cb(null);
 };
 
-COMMANDS.me = function (user, action, cb) {
-    var extra = {who: user.name, acting: true};
+COMMANDS.me = function (user, action, extra, cb) {
+    extra.who = user.name;
+    extra.acting = true;
     if (user.nameColor)
         extra.color = user.nameColor;
     gameLog(parseRolls(user, action), extra, cb);
 };
 
-COMMANDS.nick = function (user, name, cb) {
+COMMANDS.nick = function (user, name, extra, cb) {
     name = name.replace(/[^\w .?\/'\-+!#&`~]+/g, '').trim().slice(0, 20);
     if (!name)
         return cb('Bad name.');
     if (user.name == name)
-        return gameLog("That's already your name.", {}, cb);
+        return gameLog("That's already your name.", extra, cb);
 
-    gameLog([prettyName(user), ' changed their name to ', {name:name}, '.']);
+    gameLog([prettyName(user), ' changed their name to ', {name:name}, '.'], extra);
     emit('set', 'user', {id: user.id, name: name});
     user.name = name;
     r.hset('rpg:user:'+user.id, 'name', name, cb);
