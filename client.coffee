@@ -132,7 +132,8 @@ class SocialView extends AutoView
 
     displayTab: (model, tab) ->
         @$('ul').hide()
-        @$('#' + tab).show()
+        $tab = @$ '#' + tab
+        $tab.show().scrollTop $tab[0].scrollHeight
 
 basicAttrs = "Spirit,Favor,Stress,Athletics,Affection,Skill,Cunning,Luck,Will".split /,/g
 moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers".split /,/g
