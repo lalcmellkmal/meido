@@ -270,12 +270,17 @@ DISPATCH.chat = function (user, msg, cb) {
     if (['log', 'ooc'].indexOf(msg.t) < 0)
         return cb("Bad chat medium.");
     if (msg.text[0] == '/') {
+        if (msg.t != 'log') {
+            logTo(user, "You can only perform commands in the main chat.", {where: msg.t});
+            cb(null);
+            return;
+        }
         var m = msg.text.match(/^\/(\w+)(?:|\s+(.*))$/);
         var cmd = m && COMMANDS[m[1].toLowerCase()];
         if (cmd)
-            return cmd(user, m[2] || '', {where: m.t}, cb);
+            return cmd(user, m[2] || '', cb);
         else {
-            logTo(user, "Bad command.", {where: m.t});
+            logTo(user, "Bad command.");
             return cb(null);
         }
     }
@@ -382,27 +387,26 @@ userEmitter.on('session', function (session, userId) {
     emitToSession(session, 'reset', 'user', {objs: users});
 });
 
-COMMANDS.help = function (user, what, extra, cb) {
-    logTo(user, "Commands: /nick <new name>, /me <does action>", extra);
+COMMANDS.help = function (user, what, cb) {
+    logTo(user, "Commands: /nick <new name>, /me <does action>");
     cb(null);
 };
 
-COMMANDS.me = function (user, action, extra, cb) {
-    extra.who = user.name;
-    extra.acting = true;
+COMMANDS.me = function (user, action, cb) {
+    var extra = {who: user.name, acting: true};
     if (user.nameColor)
         extra.color = user.nameColor;
     gameLog(parseRolls(user, action), extra, cb);
 };
 
-COMMANDS.nick = function (user, name, extra, cb) {
+COMMANDS.nick = function (user, name, cb) {
     name = name.replace(/[^\w .?\/'\-+!#&`~]+/g, '').trim().slice(0, 20);
     if (!name)
         return cb('Bad name.');
     if (user.name == name)
-        return gameLog("That's already your name.", extra, cb);
+        return gameLog("That's already your name.", {}, cb);
 
-    gameLog([prettyName(user), ' changed their name to ', {name:name}, '.'], extra);
+    gameLog([prettyName(user), ' changed their name to ', {name:name}, '.']);
     emit('set', 'user', {id: user.id, name: name});
     user.name = name;
     r.hset('rpg:user:'+user.id, 'name', name, cb);
