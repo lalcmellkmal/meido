@@ -1,3 +1,5 @@
 module.exports = {
 	GMS: ['lalc@doushio.com'],
+	BOARD_REDIS_PORT: 6379,
+	IMAGE_ROOT: 'http://example.com/src/',
 };

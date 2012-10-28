@@ -414,6 +414,7 @@ COMMANDS.nick = function (user, name, cb) {
 
 var validTargets = ['game', 'user'];
 var invalidAttrs = ['email', 'gm'];
+var SETTERS = {};
 
 DISPATCH.set = function (user, msg, cb) {
     var target = msg.t, targetId = 0;
@@ -430,12 +431,21 @@ DISPATCH.set = function (user, msg, cb) {
     }
 
     /* attrs to set; should really check these too */
-    for (var k in msg)
-        if (invalidAttrs.indexOf(k) >= 0 || typeof msg[k] != 'string' || !msg[k].trim())
+    for (var k in msg) {
+        var v = msg[k];
+        if (invalidAttrs.indexOf(k) >= 0 || typeof v != 'string')
             delete msg[k];
+        else if (k in SETTERS) {
+            v = SETTERS[k](v);
+            if (typeof v == 'string')
+                msg[k] = v;
+            else
+                delete msg[k];
+        }
+    }
 
     if (_.isEmpty(msg))
-        return cb("Nothing to set.");
+        return cb(null);
 
     r.hmset(key, msg, function (err) {
         if (err)
@@ -452,6 +462,50 @@ DISPATCH.set = function (user, msg, cb) {
         }
 
         cb(null);
+    });
+};
+
+SETTERS.title = function (title) {
+    return title.trim() || 'Untitled';
+};
+
+/* Dumb hack */
+var BOARD_REDIS;
+if (gameConfig.BOARD_REDIS_PORT) {
+    BOARD_REDIS = require('redis').createClient(gameConfig.BOARD_REDIS_PORT);
+    BOARD_REDIS.once('error', function (err) {
+        console.error("Board redis error:", err);
+        BOARD_REDIS = null;
+    });
+}
+
+SETTERS.figure = function (fig) {
+    var m = fig.match(/(\d+)/);
+    if (!m || !BOARD_REDIS)
+        return;
+    var num = m[1];
+    var m = BOARD_REDIS.multi();
+    m.hgetall('post:'+num);
+    m.hgetall('thread:'+num);
+    m.exec(function (err, posts) {
+        if (err)
+            console.error(err);
+        var post = posts[0];
+        if (!post || !post.src)
+            post = posts[1];
+        if (!post || !post.src)
+            return console.error("No image at >>" + num);
+        var fig = JSON.stringify({
+            src: gameConfig.IMAGE_ROOT + post.src,
+            dims: post.dims.split(/,/g).map(function (d) { return +d; }),
+        });
+        var m = r.multi();
+        m.hset('rpg:game', 'figure', fig);
+        emit('set', 'game', {figure: fig}, m);
+        m.exec(function (err, cb) {
+            if (err)
+                console.error(err);
+        });
     });
 };
 

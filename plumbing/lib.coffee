@@ -66,6 +66,10 @@ class AutoView extends Backbone.View
 asTarget = (path, el) ->
     $(el).addClass('target').addClass('attr-' + path)
 
+notTarget = (path, el) ->
+    $(el).removeClass('target').removeClass('attr-' + path)
+    null
+
 nameFromAttrKey = (key) ->
     key.replace /[A-Z]/g, (c) -> " #{c.toLowerCase()}"
 
