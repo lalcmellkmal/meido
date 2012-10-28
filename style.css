@@ -21,9 +21,10 @@ body {
 	width: 100%;
 }
 #social ul, #game {
+	margin: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
-	margin: 0;
+	-webkit-overflow-scrolling: touch;
 }
 #social ul {
 	height: 92%;
