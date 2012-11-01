@@ -451,19 +451,38 @@ DISPATCH.set = function (user, msg, cb) {
                 delete msg[k];
         }
         else if (target == 'user') {
+            var log, dest;
             if (targetId != user.id) {
                 if (user.gm) {
-                    var dest = USERS[targetId];
+                    dest = USERS[targetId];
                     if (dest)
-                        loggedChanges[k] = ' set ' + dest.name + "'s " + k + ' to ' + v + '.';
+                        log = ' sets ' + dest.name + "'s " + k + ' to ' + v;
                 }
                 else {
                     delete msg[k];
                     logTo(user, "You can't modify someone else's stats.");
                 }
             }
-            else
-                loggedChanges[k] = ' set their ' + k + ' to ' + v + '.';
+            else {
+                dest = user;
+                log = ' sets their ' + k + ' to ' + v;
+            }
+
+            if (log) {
+                if (dest) {
+                    var oldVal = dest[k];
+                    var oldNum = parseInt(oldVal, 10);
+                    var newNum = parseInt(v, 10);
+                    if (!isNaN(oldNum) && !isNaN(newNum)) {
+                        var diff = newNum - oldNum;
+                        log += ' (' + (diff < 0 ? diff : '+' + diff) + ')';
+                    }
+                    else {
+                        log += ' (was ' + oldVal + ')';
+                    }
+                }
+                loggedChanges[k] = log + '.';
+            }
         }
     }
 
