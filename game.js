@@ -303,7 +303,7 @@ function parseRolls(user, text) {
         var d = key.match(/^(\d+)?d(\d+)$/);
         if (d) {
             var n = parseInt(d[1], 10) || 1, s = parseInt(d[2], 10);
-            if (s && n <= 10 && s <= 100) {
+            if (s && n <= 30 && s <= 100) {
                 if (n == 1)
                     return {roll: '#d' + s + ' (' + rollDie(s) + ')'};
 
