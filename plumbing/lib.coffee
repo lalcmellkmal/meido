@@ -44,8 +44,9 @@ class AutoView extends Backbone.View
                         (cls) -> cls.match /^attr-/
         if path.length == 1
             path = path[0].slice 5
+            oldVal = @model.get path
             $t.css color: 'gray'
-            newVal = prompt "Enter new #{nameFromAttrKey path}."
+            newVal = prompt "Enter new #{nameFromAttrKey path}.", oldVal
             $t.css color: 'inherit'
             if newVal
                 setter = if @id then {t: @id} else @findPath $t
