@@ -456,7 +456,7 @@ DISPATCH.set = function (user, msg, cb) {
                 if (user.gm) {
                     dest = USERS[targetId];
                     if (dest)
-                        log = ' sets ' + dest.name + "'s " + k + ' to ' + v;
+                        log = ' sets ' + dest.name + "'s ";
                 }
                 else {
                     delete msg[k];
@@ -465,8 +465,9 @@ DISPATCH.set = function (user, msg, cb) {
             }
             else {
                 dest = user;
-                log = ' sets their ' + k + ' to ' + v;
+                log = ' sets their ';
             }
+            log += nameFromAttrKey(k) + ' to ' + v;
 
             if (log) {
                 if (dest) {
@@ -509,6 +510,12 @@ DISPATCH.set = function (user, msg, cb) {
         cb(null);
     });
 };
+
+function nameFromAttrKey(key) {
+    return key.replace(/[A-Z]/g, function (c) {
+        return ' ' + c.toLowerCase();
+    });
+}
 
 SETTERS.title = function (title) {
     return title.trim() || 'Untitled';
