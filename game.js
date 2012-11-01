@@ -155,6 +155,7 @@ function refreshUser(userId, cb) {
         if (err)
             return cb(err);
         if (user && userId in USERS) {
+            user.gm = isGmPersona(user.email) ? 1 : 0;
             delete user.email;
             user.id = userId;
             USERS[userId] = user;
@@ -363,6 +364,10 @@ function rollDie(n) {
 
 /* GAME STATE */
 
+function isGmPersona(email) {
+    return gameConfig.GMS.indexOf(email) >= 0;
+}
+
 userEmitter.on('session', function (session, userId) {
     var m = r.multi();
     m.hgetall('rpg:game');
@@ -372,7 +377,7 @@ userEmitter.on('session', function (session, userId) {
             throw err;
         var game = rs[0], email = rs[1];
         if (game) {
-            game.gm = (gameConfig.GMS.indexOf(email) >= 0) ? '1' : '0';
+            game.gm = isGmPersona(email) ? '1' : '0';
             emitToSession(session, 'set', 'game', game);
         }
     });
@@ -430,7 +435,10 @@ DISPATCH.set = function (user, msg, cb) {
         delete msg.id;
     }
 
+    var loggedChanges = {};
+
     /* attrs to set; should really check these too */
+    delete msg.a;
     for (var k in msg) {
         var v = msg[k];
         if (invalidAttrs.indexOf(k) >= 0 || typeof v != 'string')
@@ -441,6 +449,21 @@ DISPATCH.set = function (user, msg, cb) {
                 msg[k] = v;
             else
                 delete msg[k];
+        }
+        else if (target == 'user') {
+            if (targetId != user.id) {
+                if (user.gm) {
+                    var dest = USERS[targetId];
+                    if (dest)
+                        loggedChanges[k] = ' set ' + dest.name + "'s " + k + ' to ' + v + '.';
+                }
+                else {
+                    delete msg[k];
+                    logTo(user, "You can't modify someone else's stats.");
+                }
+            }
+            else
+                loggedChanges[k] = ' set their ' + k + ' to ' + v + '.';
         }
     }
 
@@ -460,6 +483,9 @@ DISPATCH.set = function (user, msg, cb) {
                 for (var k in msg)
                     dest[k] = msg[k];
         }
+
+        for (var k in loggedChanges)
+            gameLog([prettyName(user), loggedChanges[k]]);
 
         cb(null);
     });
