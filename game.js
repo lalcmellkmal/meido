@@ -295,7 +295,7 @@ DISPATCH.chat = function (user, msg, cb) {
 };
 
 function parseRolls(user, text) {
-    return text.split(/([\/#][a-zA-Z0-9]+)/g).map(function (bit, i) {
+    return text.split(/([\/#][a-zA-Z0-9+\-]+)/g).map(function (bit, i) {
         if (i % 2 == 0)
             return bit;
 
@@ -314,20 +314,32 @@ function parseRolls(user, text) {
                     sum += f;
                 }
                 return {
-                    roll: '#' + n + 'd' + s + ' (' + sum + ')',
-                    alt: rolls.join(', '),
+                    roll: '#' + n + 'd' + s + ': rolled ' + rolls.join(', '),
+                    alt: 'sum ' + sum,
                 };
             }
         }
-        var attr = parseQuantity(user[key]);
-        if (attr === 0)
-            return {roll: key + ' = 0'};
-        if (!attr)
+
+        var m = key.match(/^(.+)([+\-]\d+)$/);
+        var justKey = m ? m[1] : key;
+        var mod = m ? parseInt(m[2], 10) : 0;
+
+        var attr = parseQuantity(user[justKey]);
+        if (!_.isNumber(attr))
             return bit;
-        var roll = rollDie(6);
+        attr += mod;
+        if (attr <= 0 || attr > 20)
+            return {roll: '#' + key + '=' + attr};
+
+        var rolls = [], sum = 0;
+        for (var i = 0; i < attr; i++) {
+            var f = rollDie(10);
+            rolls.push(f);
+            sum += f;
+        }
         return {
-            roll: key + ' check ' + attr*roll,
-            alt: 'rolled ' + roll + ', times ' + user[key],
+            roll: '#' + key + '=' + attr + ': rolled ' + rolls.join(', '),
+            alt: 'sum ' + sum,
         };
     });
 }
