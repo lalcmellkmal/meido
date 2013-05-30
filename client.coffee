@@ -65,11 +65,15 @@ class LogView extends AutoView
         if overflow > 0
             for i in [1..overflow]
                 @model.shift()
+
+        curTab = models.social.get 'tab'
+        if curTab != @id
+            models.social.set(@id + 'Unseen', true)
+
         if alreadyAtBottom
             @$el.scrollTop e.scrollHeight
-        else
-            if models.social.get('tab') == @id
-                models.social.set unseenMessage: true
+        else if curTab == @id
+            models.social.set unseenMessage: true
         return
 
     reset: (log) ->
@@ -102,6 +106,8 @@ class SocialView extends AutoView
         'click .tab': 'chooseTab'
 
     links:
+        'change:logUnseen': 'unseenLog'
+        'change:oocUnseen': 'unseenOoc'
         'change:unseenMessage': 'unseenMessage'
         'change:tab': 'displayTab'
 
@@ -116,6 +122,12 @@ class SocialView extends AutoView
             $input.val('').focus()
         false
 
+    unseenLog: (model, unseen) ->
+        @$('.tab[href=#log]').text(if unseen then 'main*' else 'main')
+
+    unseenOoc: (model, unseen) ->
+        @$('.tab[href=#ooc]').text(if unseen then 'ooc*' else 'ooc')
+
     unseenMessage: (model, unseen) ->
         @$('#unseenMessageHint').toggle !!unseen
 
@@ -127,7 +139,7 @@ class SocialView extends AutoView
 
     chooseTab: (event) ->
         tab = $(event.target).attr('href').replace '#', ''
-        @model.set tab: tab, unseenMessage: false
+        @model.set tab: tab, unseenMessage: false, logUnseen: false, oocUnseen: false
         false
 
     displayTab: (model, tab) ->
