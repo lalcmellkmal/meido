@@ -135,8 +135,8 @@ class SocialView extends AutoView
         $tab = @$ '#' + tab
         $tab.show().scrollTop $tab[0].scrollHeight
 
-basicAttrs = "Spirit,Favor,Stress,Athletics,Affection,Skill,Cunning,Luck,Will".split /,/g
-moreAttrs = "Maid Types,Maid Colors,Special Qualities,Maid Roots,Stress Explosion,Maid Powers,Maid Weapon".split /,/g
+basicAttrs = "Feet,Guts,Hands,Attention,Wits".split /,/g
+moreAttrs = "Pe,Kicking,Dodging,Wind,Courage,Wrestling,Shop,Punching,Blocking,Out-think,Remember,Notice,Charm,Putdown,Connive".split /,/g
 adminAttrs = "Name Color,Muted".split /,/g
 
 attrKeyFromName = (name) ->
