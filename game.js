@@ -490,7 +490,7 @@ DISPATCH.set = function (user, msg, cb) {
                         var diff = newNum - oldNum;
                         log += ' (' + (diff < 0 ? diff : '+' + diff) + ')';
                     }
-                    else {
+                    else if (oldVal) {
                         log += ' (was ' + oldVal + ')';
                     }
                 }
