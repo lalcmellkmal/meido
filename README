@@ -1,0 +1,5 @@
+Run both `node game.js` and also `node plumbing/broker.js` at the same time.
+
+The way it works is: broker.js holds all the socket connections and does HTTP serving. Meanwhile, game.js runs the actual game logic. The reason for this is so you can change the server game logic by restarting game.js without making all the players disconnect.
+
+Also, you can edit client code (client.coffee) while the game is running, then issue `make upgrade` to broadcast the new client code to all players' browsers on the fly. (The client code is written in a very deliberate way to make this possible)
